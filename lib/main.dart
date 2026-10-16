@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const CatGameApp());
@@ -70,10 +71,20 @@ class _CatGamePageState extends State<CatGamePage> {
   String message = '';
   List<Food> foods = List.of(kFoods);
 
+  /// Салют из конфетти, когда котик наелся.
+  final ConfettiController _confetti =
+      ConfettiController(duration: const Duration(seconds: 2));
+
   @override
   void initState() {
     super.initState();
     _startRound();
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    super.dispose();
   }
 
   /// Прячем котика в новом месте. Поле растёт каждые 2 уровня (3x3 … 6x6).
@@ -177,6 +188,7 @@ class _CatGamePageState extends State<CatGamePage> {
         final bonus = 10 + triesLeft * 5;
         score += bonus;
         message = 'Котик сыт и мурлычет! +$bonus ⭐';
+        _confetti.play();
       } else {
         catFace = satiety >= 50 ? '😺' : '😸';
       }
@@ -193,25 +205,46 @@ class _CatGamePageState extends State<CatGamePage> {
         centerTitle: true,
         backgroundColor: scheme.primaryContainer,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildStatus(),
-              const SizedBox(height: 12),
-              _buildMessage(scheme),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Center(
-                  child: AspectRatio(aspectRatio: 1, child: _buildGrid()),
-                ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildStatus(),
+                  const SizedBox(height: 12),
+                  _buildMessage(scheme),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Center(
+                      child: AspectRatio(aspectRatio: 1, child: _buildGrid()),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildBottomPanel(),
+                ],
               ),
-              const SizedBox(height: 12),
-              _buildBottomPanel(),
-            ],
+            ),
           ),
-        ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confetti,
+              blastDirectionality: BlastDirectionality.explosive,
+              numberOfParticles: 30,
+              emissionFrequency: 0.08,
+              gravity: 0.25,
+              colors: const [
+                Colors.orange,
+                Colors.pink,
+                Colors.yellow,
+                Colors.lightBlue,
+                Colors.green,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
